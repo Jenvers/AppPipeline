@@ -27,7 +27,7 @@ function App() {
 				<p>Estudiante de Noveno Semestre de ingeniería Informática de la Universidad de La Sabana.</p>
 			</div>
 			<div className="col">
-				<h2>Juan F. Vargas</h2>
+				<h2>Juan F.</h2>
 				<img src={juan} height="300" width="300" alt=""/>
 				<p>Estudiante de Noveno Semestre de ingeniería Informática de la Universidad de La Sabana.</p>
 			</div>
