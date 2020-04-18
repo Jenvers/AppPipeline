@@ -6,7 +6,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:latest
+      - image: circleci/node:8.10
     working_directory: ~/repo
 
     steps:
@@ -23,10 +23,23 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
- 
+  test:
+    docker:
+      - image: circleci/node:8.10
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run: yarn run test
   deployDevelopment:
     docker:
-      - image: circleci/node:latest
+      - image: circleci/node:8.10
     working_directory: ~/repo
 
     steps:
@@ -41,19 +54,18 @@ jobs:
           fingerprints:
             - "e9:ec:9e:6b:38:6d:b2:f8:32:6b:82:79:cd:7b:68:e9"
       - run: yarn run build
-      - run: scp -o StrictHostKeyChecking=no -r ./build/* ubuntu@18.234.41.131:/var/www/html
+      - run: scp -o StrictHostKeyChecking=no -r ./build/* ubuntu@18.232.140.254:/var/www/html
       - save_cache:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
-  deployProduction:
+  runDeploy:
     docker:
-      - image: circleci/node:latest
+      - image: circleci/node:8.10
     working_directory: ~/repo
 
     steps:
       - checkout
-
       # Download and cache dependencies
       - restore_cache:
           keys:
@@ -64,10 +76,14 @@ jobs:
             - "e9:ec:9e:6b:38:6d:b2:f8:32:6b:82:79:cd:7b:68:e9"
       - run: yarn run build
       - run: scp -o StrictHostKeyChecking=no -r ./build/* ubuntu@34.237.176.104:/var/www/html
+      
       - save_cache:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
+
+ 
+    
 
 
 workflows:
@@ -78,23 +94,31 @@ workflows:
           filters:
             branches:
               only:
-      - deployDevelopment:
-          request-testing:
-            type: approval
+                - master
+      - test:
           requires:
             - build
-            
           filters:
             branches:
               only:
                 - master
-      - deployProduction:
-          
+      - deployDevelopment:
           requires:
-            - request-testing
-            - deployDevelopment
-            
+            - build
+            - test
           filters:
             branches:
               only:
-                - master         
+                - master
+      - request-testing:
+          type: approval
+          requires:
+            - deployDevelopment
+            - test
+      - runDeploy:
+          requires:
+            - request-testing
+          filters:
+            branches:
+              only:
+                - master  
