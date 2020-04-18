@@ -1,5 +1,4 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import jenncy from "./imagenes/jenncy.png"
 import uni from "./imagenes/uni.jpg"
